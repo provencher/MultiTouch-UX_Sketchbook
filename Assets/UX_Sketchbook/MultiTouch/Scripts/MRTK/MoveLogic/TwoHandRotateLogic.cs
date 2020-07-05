@@ -26,10 +26,10 @@ namespace Microsoft.MixedReality.Toolkit.Physics
         /// Setup the rotation logic.
         /// </summary>
         /// <param name="handsPressedArray">Array with positions of down pointers</param>
-        public void Setup(Vector3[] handsPressedArray, Transform t)
+        public void Setup(Vector3[] handsPressedArray, Transform targetTransform)
         {
             startHandlebar = GetHandlebarDirection(handsPressedArray);
-            startRotation = t.rotation;
+            startRotation = targetTransform.rotation;
         }
 
         /// <summary>
