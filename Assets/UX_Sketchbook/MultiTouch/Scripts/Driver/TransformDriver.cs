@@ -16,6 +16,9 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
         [SerializeField]
         Transform m_TargetTransform = null;
 
+        [SerializeField]
+        float m_TransformSpeed = 10f;
+
         ManipulationMoveLogic moveLogic = new ManipulationMoveLogic();
         TwoHandRotateLogic rotationLogic = new TwoHandRotateLogic();
         TwoHandScaleLogic scaleLogic = new TwoHandScaleLogic();
@@ -33,6 +36,7 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
 
         const int c_VelocitySampleLimit = 10;
         Queue<Vector3> m_VelocityDirectionSamples = new Queue<Vector3>(c_VelocitySampleLimit);
+
 
         void Awake()
         {
@@ -114,7 +118,6 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
                 scaleLogic.UpdateMap(InputArray);
 
                 ComputeInertialParameters();
-                return;
             }
             else
             {
@@ -159,7 +162,7 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
         void ComputeInertialParameters()
         {
             // Compute translational velocity for inertia
-            m_VelocityDirection = m_TargetPosition - m_TargetTransform.position;
+            m_VelocityDirection = (m_TargetPosition - m_TargetTransform.position) * m_TransformSpeed;
             AddVelocityDirectionSample(m_VelocityDirection);
 
             // Compute Rotational velocity for inertia
