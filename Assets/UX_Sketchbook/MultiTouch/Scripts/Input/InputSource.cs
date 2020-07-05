@@ -8,41 +8,41 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Input
 
     public class InputSource : MonoBehaviour
     {
-        private Vector3 position;
-        private float width;
-        private float height;
+        float m_Width;
+        float m_Height;
 
-        void Awake()
-        {
-            width = (float)Screen.width / 2.0f;
-            height = (float)Screen.height / 2.0f;
+        List<Vector3> m_FingerPositions = new List<Vector3>();
 
-            // Position used for the cube.
-            position = new Vector3(0.0f, 0.0f, 0.0f);
-        }
+        public IReadOnlyList<Vector3> FingerPositions => m_FingerPositions;
 
         void OnGUI()
         {
-            // Compute a fontSize based on the size of the screen width.
+            // Compute a fontSize based on the size of the screen m_Width.
             GUI.skin.label.fontSize = (int)(Screen.width / 25.0f);
 
-            GUI.Label(new Rect(20, 20, width, height * 0.25f),
-                "x = " + position.x.ToString("f2") +
-                ", y = " + position.y.ToString("f2"));
+            for (int i = 0; i < m_FingerPositions.Count; i++)
+            {
+                GUI.Label(new Rect(20, 20 * (i + 1) + i * 20, m_Width, m_Height * 0.25f),
+                    $"F {i} [ x = {m_FingerPositions[i].x:f2} | y = {m_FingerPositions[i].y:f2} ]");
+            }
         }
 
         void Update()
         {
+            // Update screen proportions
+            m_Width = (float)Screen.width / 2.0f;
+            m_Height = (float)Screen.height / 2.0f;
+
+            m_FingerPositions.Clear();
             for (int i = 0; i < Input.touchCount; i++)
             {
                 Touch touch = Input.GetTouch(i);
 
                 Vector2 pos = touch.position;
-                pos.x = (pos.x - width) / width;
-                pos.y = (pos.y - height) / height;
-                position = new Vector3(-pos.x, pos.y, 0.0f);
+                pos.x = (pos.x - m_Width) / m_Width;
+                pos.y = (pos.y - m_Height) / m_Height;
 
-                Debug.Log($"Input {i} pos: {position} screenPos {pos}");
+                m_FingerPositions.Add(new Vector3(-pos.x, pos.y, 0.0f));
             }
         }
     }
