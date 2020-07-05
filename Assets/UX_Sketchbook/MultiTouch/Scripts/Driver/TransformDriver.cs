@@ -125,7 +125,7 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
             }
 
             m_TargetPosition = m_TargetTransform.position + GetAverageVelocityDirection();
-            m_TargetRotation = m_TargetTransform.rotation;
+            //m_TargetRotation = m_TargetTransform.rotation;
         }
 
         void AddVelocityDirectionSample(Vector3 newSample)

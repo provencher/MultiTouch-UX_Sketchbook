@@ -34,7 +34,7 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Input
 
             for (int i = 0; i < m_FingerPositions.Count; i++)
             {
-                GUI.Label(new Rect(20, 20 * (i + 1) + i * 20, m_Width, m_Height * 0.25f),
+                GUI.Label(new Rect(20, 20 * (i + 1) + i * m_Height * 0.25f, m_Width, m_Height * 0.25f),
                     $"F {i} [ x = {m_FingerPositions[i].x:f2} | y = {m_FingerPositions[i].y:f2} ]");
             }
         }
