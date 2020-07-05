@@ -31,6 +31,9 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
         Vector3 m_VelocityDirection = Vector3.zero;
         Vector3 m_AngularVelocityDirection = Vector3.zero;
 
+        const int c_VelocitySampleLimit = 10;
+        Queue<Vector3> m_VelocityDirectionSamples = new Queue<Vector3>(c_VelocitySampleLimit);
+
         void Awake()
         {
             if (m_InputSource == null)
@@ -118,8 +121,32 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
                 DegradeInertialParameters();
             }
 
-            m_TargetPosition = m_TargetTransform.position + m_VelocityDirection;
+            m_TargetPosition = m_TargetTransform.position + GetAverageVelocityDirection();
             m_TargetRotation = m_TargetTransform.rotation;
+        }
+
+        void AddVelocityDirectionSample(Vector3 newSample)
+        {
+            m_VelocityDirectionSamples.Enqueue(newSample);
+            
+            // Clear old samples
+            while (m_VelocityDirectionSamples.Count > c_VelocitySampleLimit)
+            {
+                m_VelocityDirectionSamples.Dequeue();
+            }
+        }
+
+        Vector3 GetAverageVelocityDirection()
+        {
+            if (m_VelocityDirectionSamples.Count == 0)
+                return Vector3.zero;
+
+            Vector3 average = Vector3.zero;
+            foreach (var sample in m_VelocityDirectionSamples)
+            {
+                average += sample;
+            }
+            return average / m_VelocityDirectionSamples.Count;
         }
 
         void UpdateTransform()
@@ -133,6 +160,7 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
         {
             // Compute translational velocity for inertia
             m_VelocityDirection = m_TargetPosition - m_TargetTransform.position;
+            AddVelocityDirectionSample(m_VelocityDirection);
 
             // Compute Rotational velocity for inertia
             // TODO use this logic go figure out angular momentum for scroll inertia
@@ -148,7 +176,7 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
         void DegradeInertialParameters()
         {
             float smoothAmt = Mathf.SmoothStep(1f, 0f, Time.deltaTime * 4f);
-            m_VelocityDirection = Vector3.Lerp(m_VelocityDirection, Vector3.zero, smoothAmt);
+            //m_VelocityDirection = Vector3.Lerp(m_VelocityDirection, Vector3.zero, smoothAmt);
 
             // TODO degrade angular velocity
         }
