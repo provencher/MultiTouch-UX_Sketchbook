@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -8,6 +9,9 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Input
 
     public class InputSource : MonoBehaviour
     {
+        [SerializeField]
+        bool m_DisplayDebugGUI = true;
+
         float m_Width;
         float m_Height;
 
@@ -15,8 +19,16 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Input
 
         public IReadOnlyList<Vector3> FingerPositions => m_FingerPositions;
 
+        public int NumberOfActiveInputs => FingerPositions.Count;
+
+        // Events
+        public event Action OnOneFingerGestureStarted;
+        public event Action OnTwoFingerGestureStarted;
+
         void OnGUI()
         {
+            if (!m_DisplayDebugGUI) return;
+
             // Compute a fontSize based on the size of the screen m_Width.
             GUI.skin.label.fontSize = (int)(Screen.width / 25.0f);
 
@@ -33,6 +45,8 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Input
             m_Width = (float)Screen.width / 2.0f;
             m_Height = (float)Screen.height / 2.0f;
 
+            int lastNumberOfInputs = m_FingerPositions.Count;
+
             m_FingerPositions.Clear();
             for (int i = 0; i < Input.touchCount; i++)
             {
@@ -43,6 +57,19 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Input
                 pos.y = (pos.y - m_Height) / m_Height;
 
                 m_FingerPositions.Add(new Vector3(-pos.x, pos.y, 0.0f));
+            }
+
+            int newNumberOfInputs = m_FingerPositions.Count;
+            if (newNumberOfInputs != lastNumberOfInputs)
+            {
+                if (newNumberOfInputs == 1 && OnOneFingerGestureStarted != null)
+                {
+                    OnOneFingerGestureStarted();
+                }
+                if (newNumberOfInputs == 2 && OnTwoFingerGestureStarted != null)
+                {
+                    OnTwoFingerGestureStarted();
+                }
             }
         }
     }
