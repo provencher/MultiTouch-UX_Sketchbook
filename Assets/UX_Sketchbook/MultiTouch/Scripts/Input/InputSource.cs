@@ -15,6 +15,8 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Input
         float m_Width;
         float m_Height;
 
+        public float AspectRatio => Screen.width / Screen.height;
+
         List<Vector3> m_FingerPositions = new List<Vector3>();
 
         public IReadOnlyList<Vector3> FingerPositions => m_FingerPositions;
@@ -60,7 +62,7 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Input
             }
 
             int newNumberOfInputs = m_FingerPositions.Count;
-            if (newNumberOfInputs != lastNumberOfInputs)
+            if (lastNumberOfInputs != newNumberOfInputs)
             {
                 if (newNumberOfInputs == 1 && OnOneFingerGestureStarted != null)
                 {

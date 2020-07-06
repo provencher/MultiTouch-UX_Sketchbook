@@ -11,6 +11,15 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
 {
     public class TransformDriver : MonoBehaviour
     {
+        public enum GestureType
+        {
+            None,
+            Single,
+            Multi
+        }
+
+        GestureType m_CurrentGestureType = GestureType.None;
+        
         [SerializeField]
         InputSource m_InputSource = null;
 
@@ -93,8 +102,15 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
 
         void OnOneFingerGestureStarted()
         {
+            if (m_CurrentTransformDecayTime >= m_TransformDecayTime - 0.05f)
+            {
+                return;
+            }
+            
             m_TwoFingerTouchStartCentroid = new MixedRealityPose(ComputeInputCentroid());
             m_ObjectStartPose = new MixedRealityPose(m_TargetTransform.position, m_TargetTransform.rotation);
+            m_VelocityDirectionSamples.Clear();
+            m_CurrentGestureType = GestureType.Single;
         }
 
         Vector3 ComputeInputCentroid()
@@ -124,27 +140,36 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
             moveLogic.Setup(m_TwoFingerTouchStartCentroid, m_TwoFingerTouchStartCentroid.Position, m_ObjectStartPose, m_TargetTransform.localScale);
             rotationLogic.Setup(InputArray, m_TargetTransform);
             scaleLogic.Setup(InputArray, m_TargetTransform);
+            
+            m_VelocityDirectionSamples.Clear();
+            m_CurrentGestureType = GestureType.Multi;
         }
 
 
-        float m_Sensitivity = 10f;
+        float m_Sensitivity = 45f;
         void ProcessInputs()
         {
             int numberOfInputs = m_InputSource.NumberOfActiveInputs;
-            if (numberOfInputs == 1)
+            if (numberOfInputs == 1 && m_CurrentGestureType == GestureType.Single)
             {
                 MixedRealityPose inputCentroid = new MixedRealityPose(ComputeInputCentroid());
                 Vector3 displacementDelta = inputCentroid.Position - m_TwoFingerTouchStartCentroid.Position;
+                
+                //displacementDelta = Quaternion.Inverse(m_TargetTransform.rotation) * displacementDelta;
 
-                float xAngle = Mathf.Repeat(displacementDelta.x * m_Sensitivity, 360f);
-                float yAngle = Mathf.Repeat(displacementDelta.y * m_Sensitivity, 360f);
+                float xAngle = Mathf.Repeat(-displacementDelta.x * m_Sensitivity, 360f);
+                float yAngle = Mathf.Repeat(-displacementDelta.y * m_Sensitivity, 360f);
 
-                Quaternion deltaRot = Quaternion.Euler(xAngle, yAngle, 0f);
-                Quaternion newRotTarget = m_ObjectStartPose.Rotation * deltaRot;
+                Quaternion deltaRot = Quaternion.Euler(yAngle, xAngle, 0f);
+                Quaternion newRotTarget = m_TargetTransform.rotation * deltaRot;
 
-                ComputeInertialParameters(m_TargetTransform.position, newRotTarget);
+                m_DeltaPosition = Vector3.zero;
+                m_DeltaRotation = deltaRot;
+                //ComputeInertialParameters(m_TargetTransform.position, newRotTarget);
+                
+                m_CurrentTransformDecayTime = m_TransformDecayTime;
             }
-            else if (numberOfInputs > 1)
+            if (numberOfInputs > 1 && m_CurrentGestureType == GestureType.Multi)
             {
                 MixedRealityPose inputCentroid = new MixedRealityPose(ComputeInputCentroid());
 
@@ -173,6 +198,11 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
                 Vector3 targetPosition = m_ObjectStartPose.Position + panDelta + scaleDirection;
 
                 ComputeInertialParameters(targetPosition, newRotTarget);
+            }
+
+            if (numberOfInputs == 0)
+            {
+                m_CurrentGestureType = GestureType.None;
             }
 
             DegradeInertialParameters();
@@ -207,8 +237,14 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
         void UpdateTransform()
         {
             float smoothAmt = Mathf.SmoothStep(0f, 1f, Time.deltaTime * 8f);
-            m_TargetTransform.position = Vector3.Lerp(m_TargetTransform.position, m_TargetPosition, Time.deltaTime * 8f * m_TransformSpeed * m_TransformDecayFactor);
-            m_TargetTransform.rotation = Quaternion.Slerp(m_TargetTransform.rotation, m_TargetRotation, Time.deltaTime * 8f * m_RotationSmoothingFactor * m_TransformDecayFactor);
+            m_TargetTransform.position = Vector3.Lerp(m_TargetTransform.position, m_TargetPosition, Time.deltaTime * m_TransformSpeed * m_TransformDecayFactor);
+            m_TargetTransform.rotation = Quaternion.Slerp(m_TargetTransform.rotation, m_TargetRotation, Time.deltaTime * m_TransformSpeed * m_RotationSmoothingFactor * m_TransformDecayFactor);
+            if (!m_AllowRollGesture)
+            {
+                Vector3 newEulerAngles = m_TargetTransform.rotation.eulerAngles;
+                newEulerAngles.z = 0f;
+                m_TargetTransform.rotation = Quaternion.Euler(newEulerAngles);
+            }
         }
 
         void ComputeInertialParameters(Vector3 newMoveTarget, Quaternion newRotTarget)
