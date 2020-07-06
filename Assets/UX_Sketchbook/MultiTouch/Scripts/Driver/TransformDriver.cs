@@ -25,6 +25,9 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
 
         float m_ScaleGestureDistance = 1f;
 
+        [SerializeField] 
+        float m_RotationSmoothingFactor = 0.1f;
+
         ManipulationMoveLogic moveLogic = new ManipulationMoveLogic();
         TwoHandRotateLogic rotationLogic = new TwoHandRotateLogic();
         TwoHandScaleLogic scaleLogic = new TwoHandScaleLogic();
@@ -180,8 +183,8 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
         void UpdateTransform()
         {
             float smoothAmt = Mathf.SmoothStep(0f, 1f, Time.deltaTime * 8f);
-            m_TargetTransform.position = Vector3.Lerp(m_TargetTransform.position, m_TargetPosition, Time.deltaTime * 8f);
-            m_TargetTransform.rotation = Quaternion.Slerp(m_TargetTransform.rotation, m_TargetRotation, Time.deltaTime * 8f);
+            m_TargetTransform.position = Vector3.Lerp(m_TargetTransform.position, m_TargetPosition, Time.deltaTime * m_TransformSpeed);
+            m_TargetTransform.rotation = Quaternion.Slerp(m_TargetTransform.rotation, m_TargetRotation, Time.deltaTime * m_TransformSpeed * m_RotationSmoothingFactor);
         }
 
         void ComputeInertialParameters(Vector3 newMoveTarget, Quaternion newRotTarget)
