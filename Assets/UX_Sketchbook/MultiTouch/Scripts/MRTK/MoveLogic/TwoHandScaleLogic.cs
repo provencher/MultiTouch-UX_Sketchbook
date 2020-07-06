@@ -40,8 +40,12 @@ namespace Microsoft.MixedReality.Toolkit.Physics
         /// <returns>a Vector3 describing the new Scale of the object being manipulated</returns>
         public virtual Vector3 UpdateMap(Vector3[] handsPressedArray)
         {
-            var ratioMultiplier = GetMinDistanceBetweenHands(handsPressedArray) / startHandDistanceMeters;
-            return startObjectScale * ratioMultiplier;
+            return startObjectScale * GetScaleRatioMultiplier(handsPressedArray);
+        }
+
+        public float GetScaleRatioMultiplier(Vector3[] handsPressedArray)
+        {
+            return GetMinDistanceBetweenHands(handsPressedArray) / startHandDistanceMeters;
         }
 
         private float GetMinDistanceBetweenHands(Vector3[] handsPressedArray)

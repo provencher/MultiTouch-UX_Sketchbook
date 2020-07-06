@@ -37,7 +37,7 @@ namespace Microsoft.MixedReality.Toolkit.Physics
         /// </summary>
         /// <param name="handsPressedArray">Array with positions of down pointers, order should be the same as handsPressedArray provided in Setup</param>
         /// <returns>Desired rotation</returns>
-        public Quaternion Update(Vector3[] handsPressedArray, Quaternion currentRotation)
+        public Quaternion Update(Vector3[] handsPressedArray)
         {
             var handlebarDirection = GetHandlebarDirection(handsPressedArray);
             return Quaternion.FromToRotation(startHandlebar, handlebarDirection) * startRotation;

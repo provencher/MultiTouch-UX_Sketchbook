@@ -19,6 +19,9 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
         [SerializeField]
         float m_TransformSpeed = 10f;
 
+        [SerializeField]
+        float m_ScaleGestureDistance = 10f;
+
         ManipulationMoveLogic moveLogic = new ManipulationMoveLogic();
         TwoHandRotateLogic rotationLogic = new TwoHandRotateLogic();
         TwoHandScaleLogic scaleLogic = new TwoHandScaleLogic();
@@ -34,9 +37,10 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
         Vector3 m_VelocityDirection = Vector3.zero;
         Vector3 m_AngularVelocityDirection = Vector3.zero;
 
+        Quaternion m_DeltaRotation = Quaternion.identity;
+
         const int c_VelocitySampleLimit = 10;
         Queue<Vector3> m_VelocityDirectionSamples = new Queue<Vector3>(c_VelocitySampleLimit);
-
 
         void Awake()
         {
@@ -113,19 +117,34 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
             {
                 MixedRealityPose inputCentroid = new MixedRealityPose(ComputeInputCentroid());
 
-                m_TargetPosition = moveLogic.Update(inputCentroid, m_TargetTransform.rotation, m_TargetTransform.localScale, false);
-                m_TargetRotation = rotationLogic.Update(InputArray, m_TargetTransform.rotation);
-                scaleLogic.UpdateMap(InputArray);
+                Vector3 newMoveTarget = moveLogic.Update(inputCentroid, m_TargetTransform.rotation, m_TargetTransform.localScale, false);
 
-                ComputeInertialParameters();
+                Quaternion newRotTarget = rotationLogic.Update(InputArray);
+
+                float newScaleRatio = scaleLogic.GetScaleRatioMultiplier(InputArray);
+                
+                if (newScaleRatio < 1)
+                {
+                    // Invert scale factor and make it negative to move in reverse
+                    newScaleRatio = -(1 - (1 / newScaleRatio));
+                }
+                else
+                {
+                    newScaleRatio -= 1;
+                }
+                float newScaleDistance = newScaleRatio * m_ScaleGestureDistance;
+                Vector3 scaleDirection = newRotTarget * Vector3.forward * newScaleDistance;
+                newMoveTarget += scaleDirection;
+
+                ComputeInertialParameters(newMoveTarget, newRotTarget);
             }
             else
             {
                 DegradeInertialParameters();
             }
 
-            m_TargetPosition = m_TargetTransform.position + GetAverageVelocityDirection();
-            //m_TargetRotation = m_TargetTransform.rotation;
+            m_TargetPosition = m_TargetTransform.position + GetAverageVelocityDirection() * m_TransformSpeed;
+            m_TargetRotation = m_TargetTransform.rotation * m_DeltaRotation;
         }
 
         void AddVelocityDirectionSample(Vector3 newSample)
@@ -159,8 +178,13 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
             m_TargetTransform.rotation = Quaternion.Slerp(m_TargetTransform.rotation, m_TargetRotation, smoothAmt);
         }
 
-        void ComputeInertialParameters()
+        void ComputeInertialParameters(Vector3 newMoveTarget, Quaternion newRotTarget)
         {
+            Vector3 deltaMovePos = newMoveTarget - m_TargetTransform.position;
+            Quaternion deltaRot = newRotTarget * Quaternion.Inverse(m_TargetTransform.rotation);
+            AddVelocityDirectionSample(deltaMovePos);
+
+            /*
             // Compute translational velocity for inertia
             m_VelocityDirection = (m_TargetPosition - m_TargetTransform.position) * m_TransformSpeed;
             AddVelocityDirectionSample(m_VelocityDirection);
@@ -174,6 +198,7 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
 
             m_AngularVelocityDirection = angularSpeed;
             Quaternion.AngleAxis(angleInDegrees, rotationAxis);
+            */
         }
 
         void DegradeInertialParameters()
