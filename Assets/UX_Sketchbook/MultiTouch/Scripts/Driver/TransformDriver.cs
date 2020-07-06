@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.MixedReality.Toolkit.Physics;
@@ -126,11 +127,11 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
                 if (newScaleRatio < 1)
                 {
                     // Invert scale factor and make it negative to move in reverse
-                    newScaleRatio = -(1 - (1 / newScaleRatio));
+                    newScaleRatio = Mathf.Clamp(-(1 - (1 / newScaleRatio)), -5f, 0f);
                 }
                 else
                 {
-                    newScaleRatio -= 1;
+                    newScaleRatio = Mathf.Clamp(newScaleRatio - 1, 0f, 5f);
                 }
                 float newScaleDistance = newScaleRatio * m_ScaleGestureDistance;
                 Vector3 scaleDirection = newRotTarget * Vector3.forward * newScaleDistance;
