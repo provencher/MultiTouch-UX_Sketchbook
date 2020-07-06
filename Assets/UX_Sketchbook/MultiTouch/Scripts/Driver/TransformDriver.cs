@@ -38,6 +38,7 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
         Vector3 m_VelocityDirection = Vector3.zero;
         Vector3 m_AngularVelocityDirection = Vector3.zero;
 
+        Vector3 m_DeltaPosition = Vector3.zero;
         Quaternion m_DeltaRotation = Quaternion.identity;
 
         const int c_VelocitySampleLimit = 10;
@@ -127,13 +128,13 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
                 if (newScaleRatio < 1)
                 {
                     // Invert scale factor and make it negative to move in reverse
-                    newScaleRatio = Mathf.Clamp(-(1 - (1 / newScaleRatio)), -5f, 0f);
+                    newScaleRatio = Mathf.Clamp(-((1 / newScaleRatio) - 1), -5f, 0f);
                 }
                 else
                 {
                     newScaleRatio = Mathf.Clamp(newScaleRatio - 1, 0f, 5f);
                 }
-                float newScaleDistance = newScaleRatio * m_ScaleGestureDistance;
+                float newScaleDistance = newScaleRatio;
                 Vector3 scaleDirection = newRotTarget * Vector3.forward * newScaleDistance;
                 newMoveTarget += scaleDirection;
 
@@ -144,7 +145,7 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
                 DegradeInertialParameters();
             }
 
-            m_TargetPosition = m_TargetTransform.position + GetAverageVelocityDirection() * m_TransformSpeed;
+            m_TargetPosition = m_TargetTransform.position + m_DeltaPosition * m_TransformSpeed;
             m_TargetRotation = m_TargetTransform.rotation * m_DeltaRotation;
         }
 
@@ -183,6 +184,9 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
         {
             Vector3 deltaMovePos = newMoveTarget - m_TargetTransform.position;
             Quaternion deltaRot = newRotTarget * Quaternion.Inverse(m_TargetTransform.rotation);
+
+            m_DeltaPosition = deltaMovePos;
+            m_DeltaRotation = deltaRot;
             AddVelocityDirectionSample(deltaMovePos);
 
             /*
