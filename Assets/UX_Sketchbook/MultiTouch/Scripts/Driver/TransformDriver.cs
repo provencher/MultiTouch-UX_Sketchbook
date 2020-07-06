@@ -114,6 +114,7 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
             m_InputSource.OnOneFingerGestureStarted += OnOneFingerGestureStarted;
             m_InputSource.OnTwoFingerGestureStarted += OnTwoFingerGestureStarted;
             m_ObjectStartPose = new MixedRealityPose(m_TargetTransform.position, m_TargetTransform.rotation);
+            m_CurrentGestureType = GestureType.None;
         }
 
         void OnDisable()
@@ -131,7 +132,6 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
         void OnOneFingerGestureStarted()
         {
             if(m_CurrentGestureType != GestureType.None)
-            //if (m_CurrentTransformDecayTime >= m_TransformDecayTime - 0.05f)
             {
                 return;
             }
@@ -201,10 +201,12 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
                 */
 
                 Vector3 newMoveTarget = moveLogic.Update(inputCentroid, m_TargetTransform.rotation, m_TargetTransform.localScale, false);
-                Vector3 panDelta = -(newMoveTarget - m_ObjectStartPose.Position) * m_PanTransformSpeed;
+                Vector3 panDelta = (newMoveTarget - m_ObjectStartPose.Position) * m_PanTransformSpeed;
 
                 m_DeltaPosition = panDelta;
                 m_DeltaRotation = Quaternion.identity;
+                m_CurrentTransformDecayTime = m_TransformDecayTime;
+
             }
             if (numberOfInputs == 2 && m_CurrentGestureType == GestureType.Multi)
             {
@@ -235,6 +237,8 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
                 m_DeltaRotation = newRotTarget * Quaternion.Inverse(m_ObjectStartPose.Rotation);
 
                 //ComputeInertialParameters(targetPosition, newRotTarget);
+                m_CurrentTransformDecayTime = m_TransformDecayTime;
+
             }
 
             if (numberOfInputs == 0)

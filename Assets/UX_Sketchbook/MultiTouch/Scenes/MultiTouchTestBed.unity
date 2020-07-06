@@ -1480,7 +1480,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b0dc8af96caa82f4b82e31fbaeeddb02, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_DisplayDebugGUI: 0
+  m_DisplayDebugGUI: 1
 --- !u!114 &1874339621
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1496,10 +1496,10 @@ MonoBehaviour:
   m_InputSource: {fileID: 1874339620}
   m_TargetTransform: {fileID: 1276076934}
   m_TransformSpeed: 10
-  m_PanTransformSpeed: 5
+  m_PanTransformSpeed: 2.5
   m_ScaleGestureDistance: 2
   m_RotationSmoothingFactor: 1
-  m_TransformDecayTime: 2
+  m_TransformDecayTime: 1
   m_AllowRollGesture: 0
 --- !u!4 &1874339622
 Transform:
