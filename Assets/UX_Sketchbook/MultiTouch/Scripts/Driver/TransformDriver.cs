@@ -25,13 +25,13 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
 
         float m_ScaleGestureDistance = 1f;
 
-        [SerializeField] 
+        [SerializeField]
         float m_RotationSmoothingFactor = 0.1f;
 
-        [SerializeField] 
+        [SerializeField]
         float m_TransformDecayTime = 2f;
 
-        [SerializeField] 
+        [SerializeField]
         bool m_AllowRollGesture = true;
 
         ManipulationMoveLogic moveLogic = new ManipulationMoveLogic();
@@ -93,11 +93,20 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
 
         void OnOneFingerGestureStarted()
         {
-
+            m_TwoFingerTouchStartCentroid = new MixedRealityPose(ComputeInputCentroid());
+            m_ObjectStartPose = new MixedRealityPose(m_TargetTransform.position, m_TargetTransform.rotation);
         }
 
         Vector3 ComputeInputCentroid()
         {
+            if (m_InputSource.FingerPositions.Count == 0)
+            {
+                return Vector3.zero;
+            }
+            if (m_InputSource.FingerPositions.Count == 1)
+            {
+                return m_InputSource.FingerPositions[0];
+            }
             Vector3 poseAverage = Vector3.zero;
             foreach (var position in m_InputSource.FingerPositions)
             {
@@ -117,18 +126,25 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
             scaleLogic.Setup(InputArray, m_TargetTransform);
         }
 
+
+        float m_Sensitivity = 10f;
         void ProcessInputs()
         {
             int numberOfInputs = m_InputSource.NumberOfActiveInputs;
-
-            /*
             if (numberOfInputs == 1)
             {
+                MixedRealityPose inputCentroid = new MixedRealityPose(ComputeInputCentroid());
+                Vector3 displacementDelta = inputCentroid.Position - m_TwoFingerTouchStartCentroid.Position;
 
-                return;
+                float xAngle = Mathf.Repeat(displacementDelta.x * m_Sensitivity, 360f);
+                float yAngle = Mathf.Repeat(displacementDelta.y * m_Sensitivity, 360f);
+
+                Quaternion deltaRot = Quaternion.Euler(xAngle, yAngle, 0f);
+                Quaternion newRotTarget = m_ObjectStartPose.Rotation * deltaRot;
+
+                ComputeInertialParameters(m_TargetTransform.position, newRotTarget);
             }
-            */
-            if (numberOfInputs == 2)
+            else if (numberOfInputs > 1)
             {
                 MixedRealityPose inputCentroid = new MixedRealityPose(ComputeInputCentroid());
 
@@ -158,7 +174,7 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
 
                 ComputeInertialParameters(targetPosition, newRotTarget);
             }
-          
+
             DegradeInertialParameters();
             m_TargetPosition = m_TargetTransform.position + m_DeltaPosition;
             m_TargetRotation = m_TargetTransform.rotation * m_DeltaRotation;
@@ -167,7 +183,7 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
         void AddVelocityDirectionSample(Vector3 newSample)
         {
             m_VelocityDirectionSamples.Enqueue(newSample);
-            
+
             // Clear old samples
             while (m_VelocityDirectionSamples.Count > c_VelocitySampleLimit)
             {
