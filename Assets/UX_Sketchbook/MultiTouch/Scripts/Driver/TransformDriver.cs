@@ -45,7 +45,7 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
         }
 
         GestureType m_CurrentGestureType = GestureType.None;
-        
+
         [SerializeField]
         InputSource m_InputSource = null;
 
@@ -131,11 +131,11 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
 
         void OnOneFingerGestureStarted()
         {
-            if(m_CurrentGestureType != GestureType.None)
+            if (m_CurrentGestureType != GestureType.None)
             {
                 return;
             }
-            
+
             m_TwoFingerTouchStartCentroid = new MixedRealityPose(ComputeInputCentroid());
             m_ObjectStartPose = new MixedRealityPose(m_TargetTransform.position, m_TargetTransform.rotation);
 
@@ -170,9 +170,12 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
             m_ObjectStartPose = new MixedRealityPose(m_TargetTransform.position, m_TargetTransform.rotation);
 
             moveLogic.Setup(m_TwoFingerTouchStartCentroid, m_TwoFingerTouchStartCentroid.Position, m_ObjectStartPose, m_TargetTransform.localScale);
-            rotationLogic.Setup(InputArray, m_TargetTransform);
+
+            Vector3 f1 = new Vector3(0f, InputArray[0].x, InputArray[0].y);
+            Vector3 f2 = new Vector3(0f, InputArray[1].x, InputArray[1].y);
+            rotationLogic.Setup(new Vector3[] { f1, f2 }, m_TargetTransform);
             scaleLogic.Setup(InputArray, m_TargetTransform);
-            
+
             m_VelocityDirectionSamples.Clear();
             m_CurrentGestureType = GestureType.Multi;
         }
@@ -186,7 +189,7 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
             {
                 MixedRealityPose inputCentroid = new MixedRealityPose(ComputeInputCentroid());
                 Vector3 displacementDelta = inputCentroid.Position - m_TwoFingerTouchStartCentroid.Position;
-                
+
                 //displacementDelta = Quaternion.Inverse(m_TargetTransform.rotation) * displacementDelta;
                 /*
                 float xAngle = Mathf.Repeat(-displacementDelta.x * m_Sensitivity, 360f);
@@ -210,13 +213,9 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
             }
             if (numberOfInputs == 2 && m_CurrentGestureType == GestureType.Multi)
             {
-                MixedRealityPose inputCentroid = new MixedRealityPose(ComputeInputCentroid());
-
-                Quaternion newRotTarget = m_TargetTransform.rotation;
-                if (m_AllowRollGesture)
-                {
-                    newRotTarget = rotationLogic.Update(InputArray);
-                }
+                Vector3 f1 = new Vector3(0f, InputArray[0].x, InputArray[0].y);
+                Vector3 f2 = new Vector3(0f, InputArray[1].x, InputArray[1].y);
+                Quaternion newRotTarget = rotationLogic.Update(new Vector3[] { f1, f2 });
 
                 float newScaleRatio = scaleLogic.GetScaleRatioMultiplier(InputArray);
                 if (newScaleRatio < 1)
