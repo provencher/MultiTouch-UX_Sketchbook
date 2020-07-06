@@ -171,8 +171,8 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
 
             moveLogic.Setup(m_TwoFingerTouchStartCentroid, m_TwoFingerTouchStartCentroid.Position, m_ObjectStartPose, m_TargetTransform.localScale);
 
-            Vector3 f1 = new Vector3(0f, InputArray[0].x, InputArray[0].y);
-            Vector3 f2 = new Vector3(0f, InputArray[1].x, InputArray[1].y);
+            Vector3 f1 = new Vector3(InputArray[0].x, 0f, InputArray[0].y);
+            Vector3 f2 = new Vector3(InputArray[1].x, 0f, InputArray[1].y);
             rotationLogic.Setup(new Vector3[] { f1, f2 }, m_TargetTransform);
             scaleLogic.Setup(InputArray, m_TargetTransform);
 
@@ -213,8 +213,8 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
             }
             if (numberOfInputs == 2 && m_CurrentGestureType == GestureType.Multi)
             {
-                Vector3 f1 = new Vector3(0f, InputArray[0].x, InputArray[0].y);
-                Vector3 f2 = new Vector3(0f, InputArray[1].x, InputArray[1].y);
+                Vector3 f1 = new Vector3(InputArray[0].x, 0f, InputArray[0].y);
+                Vector3 f2 = new Vector3(InputArray[1].x, 0f, InputArray[1].y);
                 Quaternion newRotTarget = rotationLogic.Update(new Vector3[] { f1, f2 });
 
                 float newScaleRatio = scaleLogic.GetScaleRatioMultiplier(InputArray);
