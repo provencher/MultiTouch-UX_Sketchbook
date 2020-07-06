@@ -32,6 +32,7 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
         [SerializeField]
         float m_PanTransformSpeed = 10f;
 
+        [SerializeField]
         float m_ScaleGestureDistance = 1f;
 
         [SerializeField]
@@ -86,6 +87,7 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
         {
             m_InputSource.OnOneFingerGestureStarted += OnOneFingerGestureStarted;
             m_InputSource.OnTwoFingerGestureStarted += OnTwoFingerGestureStarted;
+            m_ObjectStartPose = new MixedRealityPose(m_TargetTransform.position, m_TargetTransform.rotation);
         }
 
         void OnDisable()
@@ -146,7 +148,7 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
         }
 
 
-        float m_Sensitivity = 45f;
+        float m_Sensitivity = 90f;
         void ProcessInputs()
         {
             int numberOfInputs = m_InputSource.NumberOfActiveInputs;
@@ -161,15 +163,17 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
                 float yAngle = Mathf.Repeat(-displacementDelta.y * m_Sensitivity, 360f);
 
                 Quaternion deltaRot = Quaternion.Euler(yAngle, xAngle, 0f);
-                Quaternion newRotTarget = m_TargetTransform.rotation * deltaRot;
+                Quaternion newRotTarget = m_ObjectStartPose.Rotation * deltaRot;
 
                 m_DeltaPosition = Vector3.zero;
                 m_DeltaRotation = deltaRot;
-                //ComputeInertialParameters(m_TargetTransform.position, newRotTarget);
+                m_TargetRotation = newRotTarget;
                 
                 m_CurrentTransformDecayTime = m_TransformDecayTime;
+                DegradeInertialParameters();
+                return;
             }
-            if (numberOfInputs > 1 && m_CurrentGestureType == GestureType.Multi)
+            if (numberOfInputs == 2 && m_CurrentGestureType == GestureType.Multi)
             {
                 MixedRealityPose inputCentroid = new MixedRealityPose(ComputeInputCentroid());
 
@@ -193,7 +197,7 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
                     newScaleRatio = Mathf.Clamp(newScaleRatio - 1, 0f, 5f);
                 }
 
-                float newScaleDistance = newScaleRatio;
+                float newScaleDistance = newScaleRatio * m_ScaleGestureDistance;
                 Vector3 scaleDirection = m_ObjectStartPose.Rotation * Vector3.forward * newScaleDistance;
                 Vector3 targetPosition = m_ObjectStartPose.Position + panDelta + scaleDirection;
 
@@ -207,7 +211,7 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
 
             DegradeInertialParameters();
             m_TargetPosition = m_TargetTransform.position + m_DeltaPosition;
-            m_TargetRotation = m_TargetTransform.rotation * m_DeltaRotation;
+            m_TargetRotation = m_ObjectStartPose.Rotation * m_DeltaRotation;
         }
 
         void AddVelocityDirectionSample(Vector3 newSample)

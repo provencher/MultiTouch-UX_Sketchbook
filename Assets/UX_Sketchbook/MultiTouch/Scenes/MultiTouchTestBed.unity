@@ -436,8 +436,9 @@ MonoBehaviour:
   m_TargetTransform: {fileID: 1276076934}
   m_TransformSpeed: 10
   m_PanTransformSpeed: 5
-  m_RotationSmoothingFactor: 0.25
-  m_TransformDecayTime: 1
+  m_ScaleGestureDistance: 2
+  m_RotationSmoothingFactor: 1
+  m_TransformDecayTime: 2
   m_AllowRollGesture: 0
 --- !u!4 &1874339622
 Transform:
