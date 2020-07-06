@@ -21,7 +21,9 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
         float m_TransformSpeed = 10f;
 
         [SerializeField]
-        float m_ScaleGestureDistance = 10f;
+        float m_PanTransformSpeed = 10f;
+
+        float m_ScaleGestureDistance = 1f;
 
         ManipulationMoveLogic moveLogic = new ManipulationMoveLogic();
         TwoHandRotateLogic rotationLogic = new TwoHandRotateLogic();
@@ -120,6 +122,7 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
                 MixedRealityPose inputCentroid = new MixedRealityPose(ComputeInputCentroid());
 
                 Vector3 newMoveTarget = moveLogic.Update(inputCentroid, m_TargetTransform.rotation, m_TargetTransform.localScale, false);
+                Vector3 panDelta = (newMoveTarget - m_TargetTransform.position) * m_PanTransformSpeed;
 
                 Quaternion newRotTarget = rotationLogic.Update(InputArray);
 
@@ -134,9 +137,10 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
                 {
                     newScaleRatio = Mathf.Clamp(newScaleRatio - 1, 0f, 5f);
                 }
-                float newScaleDistance = newScaleRatio;
+
+                float newScaleDistance = newScaleRatio * m_ScaleGestureDistance;
                 Vector3 scaleDirection = newRotTarget * Vector3.forward * newScaleDistance;
-                newMoveTarget += scaleDirection;
+                Vector3 targetPosition = m_TargetTransform.position + panDelta + scaleDirection;
 
                 ComputeInertialParameters(newMoveTarget, newRotTarget);
             }
@@ -176,8 +180,8 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
         void UpdateTransform()
         {
             float smoothAmt = Mathf.SmoothStep(0f, 1f, Time.deltaTime * 8f);
-            m_TargetTransform.position = Vector3.Lerp(m_TargetTransform.position, m_TargetPosition, smoothAmt);
-            m_TargetTransform.rotation = Quaternion.Slerp(m_TargetTransform.rotation, m_TargetRotation, smoothAmt);
+            m_TargetTransform.position = Vector3.Lerp(m_TargetTransform.position, m_TargetPosition, Time.deltaTime * 8f);
+            m_TargetTransform.rotation = Quaternion.Slerp(m_TargetTransform.rotation, m_TargetRotation, Time.deltaTime * 8f);
         }
 
         void ComputeInertialParameters(Vector3 newMoveTarget, Quaternion newRotTarget)
