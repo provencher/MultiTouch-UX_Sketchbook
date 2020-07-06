@@ -1,5 +1,31 @@
-﻿using System;
-using System.Collections;
+﻿//------------------------------------------------------------------------------ -
+//MultiTouch-UX_Sketchbook
+//https://github.com/provencher/MultiTouch-UX_Sketchbook
+//------------------------------------------------------------------------------ -
+//
+//MIT License
+//
+//Copyright(c) 2020 Eric Provencher
+//
+//Permission is hereby granted, free of charge, to any person obtaining a copy
+//of this software and associated documentation files(the "Software"), to deal
+//in the Software without restriction, including without limitation the rights
+//to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
+//copies of the Software, and to permit persons to whom the Software is
+//furnished to do so, subject to the following conditions :
+//
+//The above copyright notice and this permission notice shall be included in all
+//copies or substantial portions of the Software.
+//
+//THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
+//AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+//OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+//SOFTWARE.
+//------------------------------------------------------------------------------ -
+
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.MixedReality.Toolkit.Physics;
@@ -104,13 +130,17 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
 
         void OnOneFingerGestureStarted()
         {
-            if (m_CurrentTransformDecayTime >= m_TransformDecayTime - 0.05f)
+            if(m_CurrentGestureType != GestureType.None)
+            //if (m_CurrentTransformDecayTime >= m_TransformDecayTime - 0.05f)
             {
                 return;
             }
             
             m_TwoFingerTouchStartCentroid = new MixedRealityPose(ComputeInputCentroid());
             m_ObjectStartPose = new MixedRealityPose(m_TargetTransform.position, m_TargetTransform.rotation);
+
+            moveLogic.Setup(m_TwoFingerTouchStartCentroid, m_TwoFingerTouchStartCentroid.Position, m_ObjectStartPose, m_TargetTransform.localScale);
+
             m_VelocityDirectionSamples.Clear();
             m_CurrentGestureType = GestureType.Single;
         }
@@ -158,32 +188,32 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
                 Vector3 displacementDelta = inputCentroid.Position - m_TwoFingerTouchStartCentroid.Position;
                 
                 //displacementDelta = Quaternion.Inverse(m_TargetTransform.rotation) * displacementDelta;
-
+                /*
                 float xAngle = Mathf.Repeat(-displacementDelta.x * m_Sensitivity, 360f);
                 float yAngle = Mathf.Repeat(-displacementDelta.y * m_Sensitivity, 360f);
 
                 Quaternion deltaRot = Quaternion.Euler(yAngle, xAngle, 0f);
                 Quaternion newRotTarget = m_ObjectStartPose.Rotation * deltaRot;
 
-                m_DeltaPosition = Vector3.zero;
-                m_DeltaRotation = deltaRot;
-                m_TargetRotation = newRotTarget;
+        
                 
                 m_CurrentTransformDecayTime = m_TransformDecayTime;
-                DegradeInertialParameters();
-                return;
+                */
+
+                Vector3 newMoveTarget = moveLogic.Update(inputCentroid, m_TargetTransform.rotation, m_TargetTransform.localScale, false);
+                Vector3 panDelta = -(newMoveTarget - m_ObjectStartPose.Position) * m_PanTransformSpeed;
+
+                m_DeltaPosition = panDelta;
+                m_DeltaRotation = Quaternion.identity;
             }
             if (numberOfInputs == 2 && m_CurrentGestureType == GestureType.Multi)
             {
                 MixedRealityPose inputCentroid = new MixedRealityPose(ComputeInputCentroid());
 
-                Vector3 newMoveTarget = moveLogic.Update(inputCentroid, m_TargetTransform.rotation, m_TargetTransform.localScale, false);
-                Vector3 panDelta = -(newMoveTarget - m_ObjectStartPose.Position) * m_PanTransformSpeed;
-
                 Quaternion newRotTarget = m_TargetTransform.rotation;
                 if (m_AllowRollGesture)
                 {
-                    rotationLogic.Update(InputArray);
+                    newRotTarget = rotationLogic.Update(InputArray);
                 }
 
                 float newScaleRatio = scaleLogic.GetScaleRatioMultiplier(InputArray);
@@ -199,9 +229,12 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
 
                 float newScaleDistance = newScaleRatio * m_ScaleGestureDistance;
                 Vector3 scaleDirection = m_ObjectStartPose.Rotation * Vector3.forward * newScaleDistance;
-                Vector3 targetPosition = m_ObjectStartPose.Position + panDelta + scaleDirection;
+                Vector3 targetPosition = m_ObjectStartPose.Position + scaleDirection;
 
-                ComputeInertialParameters(targetPosition, newRotTarget);
+                m_DeltaPosition = targetPosition - m_ObjectStartPose.Position;
+                m_DeltaRotation = newRotTarget * Quaternion.Inverse(m_ObjectStartPose.Rotation);
+
+                //ComputeInertialParameters(targetPosition, newRotTarget);
             }
 
             if (numberOfInputs == 0)
