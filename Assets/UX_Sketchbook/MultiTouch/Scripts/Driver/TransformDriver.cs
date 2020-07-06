@@ -49,6 +49,8 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
         const int c_VelocitySampleLimit = 10;
         Queue<Vector3> m_VelocityDirectionSamples = new Queue<Vector3>(c_VelocitySampleLimit);
 
+        float m_TransformDecayFactor = 1f;
+
         void Awake()
         {
             if (m_InputSource == null)
@@ -183,8 +185,8 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
         void UpdateTransform()
         {
             float smoothAmt = Mathf.SmoothStep(0f, 1f, Time.deltaTime * 8f);
-            m_TargetTransform.position = Vector3.Lerp(m_TargetTransform.position, m_TargetPosition, Time.deltaTime * m_TransformSpeed);
-            m_TargetTransform.rotation = Quaternion.Slerp(m_TargetTransform.rotation, m_TargetRotation, Time.deltaTime * m_TransformSpeed * m_RotationSmoothingFactor);
+            m_TargetTransform.position = Vector3.Lerp(m_TargetTransform.position, m_TargetPosition, Time.deltaTime * m_TransformSpeed * m_TransformDecayFactor);
+            m_TargetTransform.rotation = Quaternion.Slerp(m_TargetTransform.rotation, m_TargetRotation, Time.deltaTime * m_TransformSpeed * m_RotationSmoothingFactor * m_TransformDecayFactor);
         }
 
         void ComputeInertialParameters(Vector3 newMoveTarget, Quaternion newRotTarget)
@@ -195,6 +197,8 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
             m_DeltaPosition = deltaMovePos;
             m_DeltaRotation = deltaRot;
             AddVelocityDirectionSample(deltaMovePos);
+
+            m_TransformDecayFactor = 1f;
 
             /*
             // Compute translational velocity for inertia
@@ -217,6 +221,8 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
         {
             float smoothAmt = Mathf.SmoothStep(1f, 0f, Time.deltaTime * 4f);
             //m_VelocityDirection = Vector3.Lerp(m_VelocityDirection, Vector3.zero, smoothAmt);
+
+            m_TransformDecayFactor = Mathf.Clamp01(m_TransformDecayFactor - Time.deltaTime);
 
             // TODO degrade angular velocity
         }
