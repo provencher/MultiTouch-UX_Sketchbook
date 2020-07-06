@@ -434,6 +434,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_InputSource: {fileID: 1874339620}
   m_TargetTransform: {fileID: 1276076934}
+  m_TransformSpeed: 1
+  m_PanTransformSpeed: 5
+  m_RotationSmoothingFactor: 0.1
+  m_TransformDecayTime: 2
+  m_AllowRollGesture: 0
 --- !u!4 &1874339622
 Transform:
   m_ObjectHideFlags: 0

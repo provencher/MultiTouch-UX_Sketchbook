@@ -31,6 +31,9 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
         [SerializeField] 
         float m_TransformDecayTime = 2f;
 
+        [SerializeField] 
+        bool m_AllowRollGesture = true;
+
         ManipulationMoveLogic moveLogic = new ManipulationMoveLogic();
         TwoHandRotateLogic rotationLogic = new TwoHandRotateLogic();
         TwoHandScaleLogic scaleLogic = new TwoHandScaleLogic();
@@ -130,12 +133,15 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
                 MixedRealityPose inputCentroid = new MixedRealityPose(ComputeInputCentroid());
 
                 Vector3 newMoveTarget = moveLogic.Update(inputCentroid, m_TargetTransform.rotation, m_TargetTransform.localScale, false);
-                Vector3 panDelta = (newMoveTarget - m_TargetTransform.position) * m_PanTransformSpeed;
+                Vector3 panDelta = -(newMoveTarget - m_ObjectStartPose.Position) * m_PanTransformSpeed;
 
-                Quaternion newRotTarget = rotationLogic.Update(InputArray);
+                Quaternion newRotTarget = m_TargetTransform.rotation;
+                if (m_AllowRollGesture)
+                {
+                    rotationLogic.Update(InputArray);
+                }
 
                 float newScaleRatio = scaleLogic.GetScaleRatioMultiplier(InputArray);
-                
                 if (newScaleRatio < 1)
                 {
                     // Invert scale factor and make it negative to move in reverse
@@ -146,15 +152,15 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
                     newScaleRatio = Mathf.Clamp(newScaleRatio - 1, 0f, 5f);
                 }
 
-                float newScaleDistance = newScaleRatio * 0.1f;
-                Vector3 scaleDirection = newRotTarget * Vector3.forward * newScaleDistance;
-                Vector3 targetPosition = m_TargetTransform.position + panDelta + scaleDirection;
+                float newScaleDistance = newScaleRatio;
+                Vector3 scaleDirection = m_ObjectStartPose.Rotation * Vector3.forward * newScaleDistance;
+                Vector3 targetPosition = m_ObjectStartPose.Position + panDelta + scaleDirection;
 
                 ComputeInertialParameters(targetPosition, newRotTarget);
             }
           
             DegradeInertialParameters();
-            m_TargetPosition = m_TargetTransform.position + m_DeltaPosition * m_TransformSpeed;
+            m_TargetPosition = m_TargetTransform.position + m_DeltaPosition;
             m_TargetRotation = m_TargetTransform.rotation * m_DeltaRotation;
         }
 
@@ -185,7 +191,7 @@ namespace prvncher.UX_Sketchbook.MultiTouch.Driver
         void UpdateTransform()
         {
             float smoothAmt = Mathf.SmoothStep(0f, 1f, Time.deltaTime * 8f);
-            m_TargetTransform.position = Vector3.Lerp(m_TargetTransform.position, m_TargetPosition, Time.deltaTime * 8f * m_TransformDecayFactor);
+            m_TargetTransform.position = Vector3.Lerp(m_TargetTransform.position, m_TargetPosition, Time.deltaTime * 8f * m_TransformSpeed * m_TransformDecayFactor);
             m_TargetTransform.rotation = Quaternion.Slerp(m_TargetTransform.rotation, m_TargetRotation, Time.deltaTime * 8f * m_RotationSmoothingFactor * m_TransformDecayFactor);
         }
 
